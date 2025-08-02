@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGPA Booster - Smart Academic Analytics</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --accent-color: #06b6d4;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border-color: rgba(255, 255, 255, 0.2);
+            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #e2e8f0;
+            --bg-card: rgba(255, 255, 255, 0.7);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .glass {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, var(--primary-color), transparent);
+            animation: rotate 10s linear infinite;
+            opacity: 0.1;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-card {
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .dashboard-card:hover::before {
+            left: 100%;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .card-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .card-label {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .input-section {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px 20px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--accent-color), var(--success-color));
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .analytics-panel {
+            padding: 30px;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .progress-ring {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .progress-ring svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+        }
+
+        .progress-ring .bg {
+            stroke: var(--border-color);
+        }
+
+        .progress-ring .progress {
+            stroke: url(#gradient);
+            stroke-linecap: round;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .target-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: var(--bg-card);
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .subjects-list {
+            margin-top: 30px;
+        }
+
+        .subject-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .subject-item:hover {
+            transform: translateX(5px);
+            border-color: var(--primary-color);
+        }
+
+        .subject-name {
+            font-weight: 600;
+        }
+
+        .subject-details {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .grade-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .grade-A { background: var(--success-color); color: white; }
+        .grade-B { background: var(--primary-color); color: white; }
+        .grade-C { background: var(--warning-color); color: white; }
+        .grade-D { background: var(--danger-color); color: white; }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            padding: 30px;
+            height: 400px;
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .ai-tips {
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
+        }
+
+        .tip-card {
+            padding: 25px;
+            background: var(--bg-card);
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tip-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .tip-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .tip-icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .tip-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .tip-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .export-section {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .floating-action:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.6s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        .bounce {
+            animation: bounce 1s;
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <header class="glass header fade-in">
+            <button class="theme-toggle glass" onclick="toggleTheme()">
+                <i class="fas fa-moon" id="theme-icon"></i>
+            </button>
+            <div class="header-content">
+                <h1 class="logo">CGPA Booster</h1>
+                <p class="subtitle">Smart Academic Analytics & Performance Enhancement</p>
+            </div>
+        </header>
+
+        <div class="dashboard fade-in">
+            <div class="glass dashboard-card">
+                <i class="fas fa-graduation-cap card-icon" style="color: var(--primary-color);"></i>
+                <div class="card-value" id="current-cgpa">0.00</div>
+                <div class="card-label">Current CGPA</div>
+            </div>
+            <div class="glass dashboard-card">
+                <i class="fas fa-chart-line card-icon" style="color: var(--success-color);"></i>
+                <div class="card-value" id="total-credits">0</div>
+                <div class="card-label">Total Credits</div>
+            </div>
+            <div class="glass dashboard-card">
+                <i class="fas fa-trophy card-icon" style="color: var(--warning-color);"></i>
+                <div class="card-value" id="total-subjects">0</div>
+                <div class="card-label">Subjects Completed</div>
+            </div>
+        </div>
+
+        <div class="main-content slide-in">
+            <div class="glass input-section">
+                <h2 class="panel-title">Add Subject</h2>
+                <form id="subject-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subject-name">Subject Name</label>
+                            <input type="text" id="subject-name" class="form-control" placeholder="e.g., Data Structures" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="credits">Credits</label>
+                            <input type="number" id="credits" class="form-control" min="1" max="10" placeholder="3" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="grade">Grade</label>
+                            <select id="grade" class="form-control" required>
+                                <option value="">Select Grade</option>
+                                <option value="10">A+ (10)</option>
+                                <option value="9">A (9)</option>
+                                <option value="8">B+ (8)</option>
+                                <option value="7">B (7)</option>
+                                <option value="6">C+ (6)</option>
+                                <option value="5">C (5)</option>
+                                <option value="4">D (4)</option>
+                                <option value="0">F (0)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" id="add-subject-btn">
+                        <i class="fas fa-plus"></i> Add Subject
+                    </button>
+                </form>
+
+                <div class="subjects-list">
+                    <h3>Your Subjects</h3>
+                    <div id="subjects-container">
+                        <p style="text-align: center; color: var(--text-secondary);">No subjects added yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass analytics-panel">
+                <h2 class="panel-title">Performance Analytics</h2>
+                <div class="progress-ring">
+                    <svg width="150" height="150">
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="bg" cx="75" cy="75" r="70"></circle>
+                        <circle class="progress" cx="75" cy="75" r="70" id="progress-circle"></circle>
+                    </svg>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                        <div style="font-size: 1.8rem; font-weight: 700;" id="cgpa-display">0.00</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">CGPA</div>
+                    </div>
+                </div>
+
+                <div class="target-section">
+                    <h4>Target CGPA</h4>
+                    <div class="form-group">
+                        <input type="number" id="target-cgpa" class="form-control" min="0" max="10" step="0.01" placeholder="8.5">
+                    </div>
+                    <button class="btn btn-secondary" onclick="calculateRequiredPerformance()">
+                        <i class="fas fa-bullseye"></i> Calculate Required Performance
+                    </button>
+                    <div id="target-analysis" style="margin-top: 15px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-section slide-in">
+            <div class="glass chart-container">
+                <h3 class="chart-title">SGPA Progression</h3>
+                <canvas id="sgpa-chart"></canvas>
+            </div>
+            <div class="glass chart-container">
+                <h3 class="chart-title">Grade Distribution</h3>
+                <canvas id="grade-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="glass ai-tips fade-in">
+            <h2 class="panel-title">
+                <i class="fas fa-robot"></i> AI-Powered Study Tips
+            </h2>
+            <div class="tips-grid" id="tips-container"></div>
+        </div>
+
+        <div class="glass export-section fade-in">
+            <h2 class="panel-title">Export Your Data</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 25px;">
+                Download your academic progress in various formats
+            </p>
+            <div class="export-buttons">
+                <button class="btn btn-secondary" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel"></i> Export to Excel
+                </button>
+                <button class="btn" onclick="generateReportCard()">
+                    <i class="fas fa-id-card"></i> Generate Report Card
+                </button>
+                <button class="btn btn-secondary" onclick="shareProgress()">
+                    <i class="fas fa-share-alt"></i> Share Progress
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <button class="floating-action" onclick="scrollToTop()">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Modal for notifications -->
+    <div class="modal" id="notification-modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let subjects = [];
+        let semesterData = [];
+        let sgpaChart, gradeChart;
+
+        // Initialize from memory storage (no localStorage in this environment)
+        function loadData() {
+            // Data will be stored in memory for this session
+            if (!subjects.length) {
+                subjects = [];
+            }
+            if (!semesterData.length) {
+                semesterData = [];
+            }
+        }
+
+        function saveData() {
+            // In a real environment, this would save to localStorage
+            // For this demo, data persists in memory during the session
+            console.log('Data saved:', { subjects, semesterData });
+        }
+
+        // Theme management
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeIcon.className = 'fas fa-sun';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.className = 'fas fa-moon';
+            }
+        }
+
+        // Initialize theme
+        function initializeTheme() {
+            const savedTheme = 'dark'; // Default to dark theme
+            document.body.setAttribute('data-theme', savedTheme);
+            document.getElementById('theme-icon').className = 'fas fa-moon';
+        }
+
+        // Subject management - FIXED VERSION
+        function addSubject(e) {
+            if (e) {
+                e.preventDefault();
+            }
+            
+            const subjectName = document.getElementById('subject-name').value.trim();
+            const credits = parseInt(document.getElementById('credits').value);
+            const grade = parseFloat(document.getElementById('grade').value);
+            
+            // Validation
+            if (!subjectName) {
+                showNotification('Please enter a subject name', 'error');
+                return false;
+            }
+            
+            if (!credits || credits < 1 || credits > 10) {
+                showNotification('Please enter valid credits (1-10)', 'error');
+                return false;
+            }
+            
+            if (grade === '' || grade < 0 || grade > 10) {
+                showNotification('Please select a valid grade', 'error');
+                return false;
+            }
+            
+            const subject = {
+                id: Date.now() + Math.random(), // Ensure unique ID
+                name: subjectName,
+                credits: credits,
+                grade: grade,
+                semester: getCurrentSemester()
+            };
+            
+            // Add to subjects array - this preserves existing subjects
+            subjects.push(subject);
+            saveData();
+            updateDisplay();
+            
+            // Reset form
+            document.getElementById('subject-form').reset();
+            
+            // Show success notification
+            showNotification('Subject added successfully! 🎉', 'success');
+            
+            return false;
+        }
+
+        function removeSubject(id) {
+            const initialLength = subjects.length;
+            subjects = subjects.filter(subject => subject.id !== id);
+            
+            if (subjects.length < initialLength) {
+                saveData();
+                updateDisplay();
+                showNotification('Subject removed successfully!', 'info');
+            } else {
+                showNotification('Subject not found!', 'error');
+            }
+        }
+
+        function getCurrentSemester() {
+            // Better semester calculation based on total subjects
+            const semesterNumber = Math.floor(subjects.length / 6) + 1;
+            return `Semester ${semesterNumber}`;
+        }
+
+        // CGPA Calculations
+        function calculateCGPA() {
+            if (subjects.length === 0) return 0;
+            
+            const totalPoints = subjects.reduce((sum, subject) => sum + (subject.grade * subject.credits), 0);
+            const totalCredits = subjects.reduce((sum, subject) => sum + subject.credits, 0);
+            
+            return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+        }
+
+        function calculateSGPA(semesterSubjects) {
+            if (semesterSubjects.length === 0) return 0;
+            
+            const totalPoints = semesterSubjects.reduce((sum, subject) => sum + (subject.grade * subject.credits), 0);
+            const totalCredits = semesterSubjects.reduce((sum, subject) => sum + subject.credits, 0);
+            
+            return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+        }
+
+        // FIXED: Complete updateDisplay function
+        function updateDisplay() {
+            updateDashboard();
+            updateSubjectsList();
+            updateProgressRing();
+            updateCharts();
+            updateAITips();
+        }
+
+        // Display updates
+        function updateDashboard() {
+            const cgpa = calculateCGPA();
+            const totalCredits = subjects.reduce((sum, subject) => sum + subject.credits, 0);
+            
+            document.getElementById('current-cgpa').textContent = cgpa.toFixed(2);
+            document.getElementById('total-credits').textContent = totalCredits;
+            document.getElementById('total-subjects').textContent = subjects.length;
+        }
+
+        function updateSubjectsList() {
+            const container = document.getElementById('subjects-container');
+            
+            if (subjects.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No subjects added yet</p>';
+                return;
+            }
+            
+            container.innerHTML = subjects.map(subject => `
+                <div class="subject-item slide-in">
+                    <div class="subject-name">${subject.name}</div>
+                    <div class="subject-details">
+                        <span>${subject.credits} Credits</span>
+                        <span class="grade-badge grade-${getGradeLetter(subject.grade)}">${getGradeLetter(subject.grade)} (${subject.grade})</span>
+                        <button class="btn btn-danger btn-small" onclick="removeSubject(${subject.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getGradeLetter(grade) {
+            if (grade >= 9) return 'A';
+            if (grade >= 7) return 'B';
+            if (grade >= 5) return 'C';
+            return 'D';
+        }
+
+        function updateProgressRing() {
+            const cgpa = calculateCGPA();
+            const percentage = (cgpa / 10) * 100;
+            const circumference = 2 * Math.PI * 70;
+            const offset = circumference - (percentage / 100) * circumference;
+            
+            const progressCircle = document.getElementById('progress-circle');
+            const cgpaDisplay = document.getElementById('cgpa-display');
+            
+            if (progressCircle) {
+                progressCircle.style.strokeDashoffset = offset;
+            }
+            if (cgpaDisplay) {
+                cgpaDisplay.textContent = cgpa.toFixed(2);
+            }
+        }
+
+        // Charts - FIXED VERSION
+        function updateCharts() {
+            updateSGPAChart();
+            updateGradeChart();
+        }
+
+        function updateSGPAChart() {
+            const ctx = document.getElementById('sgpa-chart');
+            if (!ctx) return;
+            
+            // Destroy existing chart
+            if (sgpaChart) {
+                sgpaChart.destroy();
+                sgpaChart = null;
+            }
+            
+            if (subjects.length === 0) {
+                // Show empty state
+                const ctxContext = ctx.getContext('2d');
+                ctxContext.clearRect(0, 0, ctx.width, ctx.height);
+                ctxContext.fillStyle = '#cbd5e1';
+                ctxContext.font = '16px Inter';
+                ctxContext.textAlign = 'center';
+                ctxContext.fillText('Add subjects to see progression', ctx.width/2, ctx.height/2);
+                return;
+            }
+            
+            // Group subjects by semester for SGPA calculation
+            const semesterGroups = {};
+            subjects.forEach((subject, index) => {
+                const semesterNum = Math.floor(index / 6) + 1;
+                const semesterKey = `Semester ${semesterNum}`;
+                if (!semesterGroups[semesterKey]) {
+                    semesterGroups[semesterKey] = [];
+                }
+                semesterGroups[semesterKey].push(subject);
+            });
+            
+            const semesterLabels = Object.keys(semesterGroups);
+            const sgpaData = semesterLabels.map(semester => 
+                calculateSGPA(semesterGroups[semester])
+            );
+            
+            sgpaChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: semesterLabels,
+                    datasets: [{
+                        label: 'SGPA',
+                        data: sgpaData,
+                        borderColor: 'rgb(99, 102, 241)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgb(99, 102, 241)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#cbd5e1'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#cbd5e1'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateGradeChart() {
+            const ctx = document.getElementById('grade-chart');
+            if (!ctx) return;
+            
+            // Destroy existing chart
+            if (gradeChart) {
+                gradeChart.destroy();
+                gradeChart = null;
+            }
+            
+            if (subjects.length === 0) {
+                // Show empty state
+                const ctxContext = ctx.getContext('2d');
+                ctxContext.clearRect(0, 0, ctx.width, ctx.height);
+                ctxContext.fillStyle = '#cbd5e1';
+                ctxContext.font = '16px Inter';
+                ctxContext.textAlign = 'center';
+                ctxContext.fillText('Add subjects to see distribution', ctx.width/2, ctx.height/2);
+                return;
+            }
+            
+            const gradeDistribution = {
+                'A+/A (9-10)': subjects.filter(s => s.grade >= 9).length,
+                'B+/B (7-8.9)': subjects.filter(s => s.grade >= 7 && s.grade < 9).length,
+                'C+/C (5-6.9)': subjects.filter(s => s.grade >= 5 && s.grade < 7).length,
+                'D/F (0-4.9)': subjects.filter(s => s.grade < 5).length
+            };
+            
+            // Filter out zero values for cleaner chart
+            const filteredLabels = [];
+            const filteredData = [];
+            const filteredColors = [];
+            const colors = ['#10b981', '#6366f1', '#f59e0b', '#ef4444'];
+            
+            Object.entries(gradeDistribution).forEach(([label, value], index) => {
+                if (value > 0) {
+                    filteredLabels.push(label);
+                    filteredData.push(value);
+                    filteredColors.push(colors[index]);
+                }
+            });
+            
+            gradeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        data: filteredData,
+                        backgroundColor: filteredColors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#cbd5e1',
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // AI-Powered Study Tips - ENHANCED VERSION
+        function updateAITips() {
+            const cgpa = calculateCGPA();
+            const tips = generateStudyTips(cgpa);
+            
+            const container = document.getElementById('tips-container');
+            if (container) {
+                container.innerHTML = tips.map(tip => `
+                    <div class="tip-card fade-in">
+                        <i class="${tip.icon} tip-icon"></i>
+                        <h4 class="tip-title">${tip.title}</h4>
+                        <p class="tip-description">${tip.description}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function generateStudyTips(cgpa) {
+            let tips = [];
+            
+            if (subjects.length === 0) {
+                return [
+                    {
+                        icon: 'fas fa-rocket',
+                        title: 'Getting Started',
+                        description: 'Welcome to CGPA Booster! Add your first subject to begin tracking your academic progress and unlock personalized study recommendations.'
+                    },
+                    {
+                        icon: 'fas fa-chart-line',
+                        title: 'Track Progress',
+                        description: 'Regular tracking helps identify patterns in your performance and areas for improvement. Start by adding your current semester subjects.'
+                    },
+                    {
+                        icon: 'fas fa-target',
+                        title: 'Set Goals',
+                        description: 'Setting a target CGPA helps you stay motivated and provides clear direction for your academic journey.'
+                    }
+                ];
+            }
+            
+            if (cgpa >= 9) {
+                tips = [
+                    {
+                        icon: 'fas fa-star',
+                        title: 'Excellence Maintenance',
+                        description: 'You\'re performing exceptionally! Consider mentoring peers and exploring advanced topics to maintain your edge.'
+                    },
+                    {
+                        icon: 'fas fa-lightbulb',
+                        title: 'Research Opportunities',
+                        description: 'With your high CGPA, look for research projects and publications to enhance your academic profile.'
+                    },
+                    {
+                        icon: 'fas fa-network-wired',
+                        title: 'Leadership Roles',
+                        description: 'Take on leadership positions in academic clubs and student organizations to develop soft skills.'
+                    }
+                ];
+            } else if (cgpa >= 7.5) {
+                tips = [
+                    {
+                        icon: 'fas fa-chart-line',
+                        title: 'Consistency Focus',
+                        description: 'You\'re doing well! Focus on maintaining consistency across all subjects to reach excellence.'
+                    },
+                    {
+                        icon: 'fas fa-clock',
+                        title: 'Time Management',
+                        description: 'Implement the Pomodoro technique and prioritize challenging subjects during peak focus hours.'
+                    },
+                    {
+                        icon: 'fas fa-users',
+                        title: 'Study Groups',
+                        description: 'Join or form study groups to share knowledge and learn different problem-solving approaches.'
+                    }
+                ];
+            } else if (cgpa >= 6) {
+                tips = [
+                    {
+                        icon: 'fas fa-book-open',
+                        title: 'Foundation Strengthening',
+                        description: 'Focus on understanding fundamental concepts. Use active recall and spaced repetition techniques.'
+                    },
+                    {
+                        icon: 'fas fa-question-circle',
+                        title: 'Seek Help',
+                        description: 'Don\'t hesitate to ask professors and classmates for help. Office hours are invaluable resources.'
+                    },
+                    {
+                        icon: 'fas fa-calendar-alt',
+                        title: 'Study Schedule',
+                        description: 'Create a detailed study schedule with specific goals for each session and track your progress.'
+                    }
+                ];
+            } else {
+                tips = [
+                    {
+                        icon: 'fas fa-exclamation-triangle',
+                        title: 'Immediate Action',
+                        description: 'Your CGPA needs urgent attention. Consider academic counseling and intensive study plans.'
+                    },
+                    {
+                        icon: 'fas fa-redo',
+                        title: 'Reset Strategy',
+                        description: 'Analyze your weak subjects and create a comprehensive recovery plan with specific milestones.'
+                    },
+                    {
+                        icon: 'fas fa-heart',
+                        title: 'Stay Motivated',
+                        description: 'Remember that improvement is possible. Set small, achievable goals and celebrate progress.'
+                    }
+                ];
+            }
+            
+            return tips;
+        }
+
+        // Target CGPA calculations
+        function calculateRequiredPerformance() {
+            const targetCGPA = parseFloat(document.getElementById('target-cgpa').value);
+            const analysisDiv = document.getElementById('target-analysis');
+            
+            if (!targetCGPA || targetCGPA < 0 || targetCGPA > 10) {
+                analysisDiv.innerHTML = '<p style="color: var(--danger-color);">Please enter a valid target CGPA (0-10)</p>';
+                return;
+            }
+            
+            const currentCGPA = calculateCGPA();
+            const totalCredits = subjects.reduce((sum, subject) => sum + subject.credits, 0);
+            
+            if (totalCredits === 0) {
+                analysisDiv.innerHTML = '<p style="color: var(--warning-color);">Add some subjects first to see target analysis</p>';
+                return;
+            }
+            
+            const requiredTotalPoints = targetCGPA * totalCredits;
+            const currentTotalPoints = subjects.reduce((sum, subject) => sum + (subject.grade * subject.credits), 0);
+            const pointsNeeded = requiredTotalPoints - currentTotalPoints;
+            
+            let analysisText = '';
+            
+            if (currentCGPA >= targetCGPA) {
+                analysisText = `<p style="color: var(--success-color);">🎉 Congratulations! You've already achieved your target CGPA of ${targetCGPA}!</p>`;
+            } else {
+                const futureCredits = Math.max(20, totalCredits * 0.3);
+                const requiredGrade = pointsNeeded / futureCredits;
+                
+                if (requiredGrade <= 10) {
+                    analysisText = `
+                        <p style="color: var(--primary-color);">📊 <strong>Target Analysis:</strong></p>
+                        <p>Current CGPA: <strong>${currentCGPA.toFixed(2)}</strong></p>
+                        <p>Target CGPA: <strong>${targetCGPA}</strong></p>
+                        <p style="color: var(--success-color);">✅ You need an average grade of <strong>${requiredGrade.toFixed(2)}</strong> in your next ${futureCredits} credits to reach your target!</p>
+                    `;
+                } else {
+                    analysisText = `
+                        <p style="color: var(--warning-color);">⚠️ Reaching this target is challenging with current performance.</p>
+                        <p>Consider retaking low-scoring subjects or focusing on extra credit opportunities.</p>
+                    `;
+                }
+            }
+            
+            analysisDiv.innerHTML = analysisText;
+        }
+
+        // Export functions
+        function exportToExcel() {
+            if (subjects.length === 0) {
+                showNotification('No data to export. Add some subjects first!', 'warning');
+                return;
+            }
+
+            const workbook = XLSX.utils.book_new();
+            
+            // Subjects sheet
+            const subjectsData = subjects.map(subject => ({
+                'Subject Name': subject.name,
+                'Credits': subject.credits,
+                'Grade': subject.grade,
+                'Grade Letter': getGradeLetter(subject.grade),
+                'Semester': subject.semester,
+                'Grade Points': subject.grade * subject.credits
+            }));
+            
+            const subjectsSheet = XLSX.utils.json_to_sheet(subjectsData);
+            XLSX.utils.book_append_sheet(workbook, subjectsSheet, 'Subjects');
+            
+            // Summary sheet
+            const cgpa = calculateCGPA();
+            const totalCredits = subjects.reduce((sum, subject) => sum + subject.credits, 0);
+            const summaryData = [
+                { 'Metric': 'Current CGPA', 'Value': cgpa.toFixed(2) },
+                { 'Metric': 'Total Credits', 'Value': totalCredits },
+                { 'Metric': 'Total Subjects', 'Value': subjects.length },
+                { 'Metric': 'Export Date', 'Value': new Date().toLocaleDateString() }
+            ];
+            
+            const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+            
+            XLSX.writeFile(workbook, `CGPA_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showNotification('Excel file exported successfully!', 'success');
+        }
+
+        function generateReportCard() {
+            const cgpa = calculateCGPA();
+            const totalCredits = subjects.reduce((sum, subject) => sum + subject.credits, 0);
+            
+            const reportCard = `
+                <div style="text-align: center; padding: 20px;">
+                    <h2 style="color: var(--primary-color); margin-bottom: 20px;">📋 Academic Report Card</h2>
+                    <div style="background: var(--bg-card); padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <h3>Overall Performance</h3>
+                        <p><strong>CGPA:</strong> ${cgpa.toFixed(2)}/10.00</p>
+                        <p><strong>Total Credits:</strong> ${totalCredits}</p>
+                        <p><strong>Subjects Completed:</strong> ${subjects.length}</p>
+                        <p><strong>Performance Grade:</strong> ${getPerformanceGrade(cgpa)}</p>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-top: 20px;">Generated on ${new Date().toLocaleDateString()}</p>
+                </div>
+            `;
+            
+            showModal(reportCard);
+        }
+
+        function getPerformanceGrade(cgpa) {
+            if (cgpa >= 9) return '🏆 Outstanding';
+            if (cgpa >= 8) return '⭐ Excellent';
+            if (cgpa >= 7) return '👍 Good';
+            if (cgpa >= 6) return '📈 Satisfactory';
+            return '📚 Needs Improvement';
+        }
+
+        function shareProgress() {
+            const cgpa = calculateCGPA();
+            const shareText = `🎓 My current CGPA is ${cgpa.toFixed(2)} with ${subjects.length} subjects completed! Tracking my progress with CGPA Booster. #AcademicExcellence`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Academic Progress',
+                    text: shareText,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    showNotification('Progress copied to clipboard!', 'success');
+                }).catch(() => {
+                    showNotification('Unable to copy to clipboard', 'error');
+                });
+            }
+        }
+
+        // Utility functions
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+                padding: 15px 20px;
+                backdrop-filter: blur(20px);
+                z-index: 1001;
+                animation: slideInRight 0.3s ease;
+                max-width: 300px;
+            `;
+            
+            const colors = {
+                success: 'var(--success-color)',
+                error: 'var(--danger-color)',
+                warning: 'var(--warning-color)',
+                info: 'var(--primary-color)'
+            };
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}" 
+                       style="color: ${colors[type]};"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease forwards';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function showModal(content) {
+            document.getElementById('modal-content').innerHTML = content;
+            document.getElementById('notification-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('notification-modal').classList.remove('active');
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize application - FIXED VERSION
+        function initializeApp() {
+            console.log('Initializing CGPA Booster...');
+            loadData();
+            initializeTheme();
+            updateDisplay();
+            
+            // Set up form event listener
+            const form = document.getElementById('subject-form');
+            if (form) {
+                // Remove any existing event listeners
+                form.removeEventListener('submit', addSubject);
+                form.addEventListener('submit', addSubject);
+                console.log('Form event listener attached');
+            }
+        }
+
+        // Click outside modal to close
+        function setupModalEvents() {
+            const modal = document.getElementById('notification-modal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeModal();
+                    }
+                });
+            }
+        }
+
+        // Enhanced features
+        function generatePerformanceInsights() {
+            const cgpa = calculateCGPA();
+            const insights = [];
+            
+            if (subjects.length >= 3) {
+                const recentSubjects = subjects.slice(-3);
+                const recentAvg = recentSubjects.reduce((sum, s) => sum + s.grade, 0) / recentSubjects.length;
+                
+                if (recentAvg > cgpa) {
+                    insights.push('📈 Your recent performance shows improvement! Keep up the momentum.');
+                } else if (recentAvg < cgpa - 0.5) {
+                    insights.push('📉 Recent grades are below your average. Consider reviewing your study methods.');
+                }
+            }
+            
+            const totalCredits = subjects.reduce((sum, subject) => sum + subject.credits, 0);
+            const avgCreditsPerSubject = subjects.length > 0 ? totalCredits / subjects.length : 0;
+            
+            if (avgCreditsPerSubject > 4) {
+                insights.push('💪 You\'re taking high-credit courses. Great for boosting your CGPA efficiently!');
+            }
+            
+            const highGrades = subjects.filter(s => s.grade >= 9).length;
+            const lowGrades = subjects.filter(s => s.grade < 6).length;
+            
+            if (subjects.length > 0) {
+                if (highGrades / subjects.length > 0.6) {
+                    insights.push('🌟 Excellent consistency in high grades! You\'re on track for academic honors.');
+                } else if (lowGrades / subjects.length > 0.3) {
+                    insights.push('⚠️ Consider focusing more on subjects where you received lower grades.');
+                }
+            }
+            
+            return insights;
+        }
+
+        // Demo data function
+        function addDemoData() {
+            const demoSubjects = [
+                { id: Date.now() + Math.random(), name: 'Data Structures', credits: 4, grade: 8.5, semester: 'Semester 1' },
+                { id: Date.now() + Math.random() + 1, name: 'Database Systems', credits: 3, grade: 9.0, semester: 'Semester 1' },
+                { id: Date.now() + Math.random() + 2, name: 'Web Development', credits: 3, grade: 8.0, semester: 'Semester 2' },
+                { id: Date.now() + Math.random() + 3, name: 'Machine Learning', credits: 4, grade: 8.7, semester: 'Semester 2' },
+                { id: Date.now() + Math.random() + 4, name: 'Operating Systems', credits: 4, grade: 7.5, semester: 'Semester 3' },
+                { id: Date.now() + Math.random() + 5, name: 'Computer Networks', credits: 3, grade: 8.2, semester: 'Semester 3' }
+            ];
+            
+            subjects.push(...demoSubjects);
+            saveData();
+            updateDisplay();
+            showNotification('Demo data added! You can now test all features.', 'info');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'n':
+                        e.preventDefault();
+                        document.getElementById('subject-name').focus();
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        saveData();
+                        showNotification('Data saved!', 'success');
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportToExcel();
+                        break;
+                }
+            }
+        });
+
+        // Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing app...');
+            initializeApp();
+            setupModalEvents();
+            
+            // Add demo data button for testing
+            setTimeout(() => {
+                const exportSection = document.querySelector('.export-buttons');
+                if (exportSection && !document.getElementById('demo-btn')) {
+                    const demoBtn = document.createElement('button');
+                    demoBtn.id = 'demo-btn';
+                    demoBtn.className = 'btn';
+                    demoBtn.innerHTML = '<i class="fas fa-database"></i> Add Demo Data';
+                    demoBtn.onclick = addDemoData;
+                    exportSection.appendChild(demoBtn);
+                }
+            }, 100);
+        });
+
+        // Fallback initialization
+        window.addEventListener('load', function() {
+            console.log('Window loaded, ensuring app is initialized...');
+            if (!document.getElementById('subject-form').hasAttribute('data-initialized')) {
+                initializeApp();
+                setupModalEvents();
+                document.getElementById('subject-form').setAttribute('data-initialized', 'true');
+            }
+        });
+    </script>
+</body>
+</html>
